@@ -1,15 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <queue.h>
 #include <pthread.h>
 #include <unistd.h>
-#include <>
 
 
 typedef struct Buffer{
     int testa;
     int coda;
     int dim;
+    int count;
     int *lista;
 }buffer;
 
@@ -22,36 +21,44 @@ pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 
 
+void stampa(){
+    if(b.count == 0){
+        printf("VUOTO\n");
+        return;  // Meglio fare return qui
+    }
+    for(int i=0; i<b.count; i++){
+        int idx = (b.coda + i) % b.dim;
+        printf("-%d-", b.lista[idx]);
+    }
+    printf("\n");
+}
 
 void My_add(int disponibili){
+    
+    if(disponibili==0){
+        return;
+    }
+
     int scelti = random()%disponibili+1;
 
-    for(int i=0; i<scelti; i++, b.testa++){
+    for(int i=0; i<scelti; i++){
 
-        if(b.testa==grandezzaLista){
-            b.esta = 0;
-            b.lista[b.testa] = random()%100;
-        }
-
-        else{
-            b.lista[b.testa] = random()%100;
-        }
+        b.lista[b.testa] = random()%100;
+        b.testa = (b.testa+1) % b.dim;
     }
-    disponibili -= scelti;
+    b.count += scelti;
+    //printf("%d\n", disponibili);
 }
 
 
-void stampa(int disponibili){
+void stampante(int disponibili){
+    if(disponibili==0)
+        return;
     int scelti = random()%disponibili+1;
 
-    for(int i=0; i<scelti; i++,b.coda++){
-
-        if(b.coda==grandezzaLista){
-            b.coda = 0;
-        }
-    }
-    disponibili += scelti;
-
+    b.coda = (b.coda+scelti) % b.dim;
+    b.count -= scelti;
+    //printf("%d\n", disponibili);
 }
 
 
@@ -61,15 +68,14 @@ void *consumatore(void *arg){ // STAMPANTE
         usleep(500000);
 
         pthread_mutex_lock(&lock);
-        if(b.dim==0){
-            while(b.dim==0){
-                pthread_mutex_unlock(&lock);
-                sched_yield();
-                pthread_mutex_lock(&lock);
-            }
-            continue;
+        while(b.count==0){
+            pthread_mutex_unlock(&lock);
+            sched_yield();
+            pthread_mutex_lock(&lock);
         }
-        My_add(grandezzaLista-b.dim);
+
+        stampante(b.count);
+        stampa();
         pthread_mutex_unlock(&lock);
     }
     
@@ -80,17 +86,17 @@ void *produttore(void *arg){  // GENERATORE
 
     while(1){
         usleep(500000);
-
+        
         pthread_mutex_lock(&lock);
-        if(b.dim==grandezzaLista){
-            while(b.dim==grandezzaLista){
-                pthread_mutex_unlock(&lock);
-                sched_yield();
-                pthread_mutex_lock(&lock);
-            }
-            continue;
+
+        while(b.count==b.dim){
+            pthread_mutex_unlock(&lock);
+            sched_yield();
+            pthread_mutex_lock(&lock);
         }
-        stampa(b.dim);
+
+        My_add(b.dim - b.count);
+        stampa();
         pthread_mutex_unlock(&lock);
     }
 }   
@@ -107,20 +113,25 @@ int main(int argc, char** argv){
     // inizializzione buffer
     b.lista = malloc(sizeof(int)*grandezzaLista);
     b.testa = 0;
-    b.coda = grandezzaLista;// ultimo dall'altraparte 
+    b.count = 0;
+    b.coda = 0;// ultimo dall'altraparte 
     b.dim = grandezzaLista;
+
+    //inizializone seed
+    srand(time(NULL));
 
     printf("Main: inizio\n");
     // dichiaro thread
     pthread_t c, p;
 
     // creazione dei thread
-    pthread_create(&c, NULL, consumatore, 'C');
-    pthread_create(&p, NULL, produttore, 'P');
+    pthread_create(&c, NULL, consumatore, NULL);
+    pthread_create(&p, NULL, produttore, NULL);
 
     // attesa dei thread
     pthread_join(p, NULL);
     pthread_join(c, NULL);
 
     printf("Main: fine\n");
+    free(b.lista);
 }   
