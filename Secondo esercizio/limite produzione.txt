@@ -1,0 +1,3 @@
+Esercizio 5: Limite di Produzione
+Crea un sistema dove ogni produttore deve generare esattamente N elementi, poi terminare. 
+I consumatori devono continuare finché non hanno consumato tutti gli elementi prodotti.
