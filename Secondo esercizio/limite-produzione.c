@@ -37,9 +37,9 @@ void *produttore(void *arg){
 		buffer[coda] = valore;
 		coda = (coda+1) % SIZEMAX;
 		elementiAttuali++;
-
-		pthread_mutex_unlock(&lock);
 		printf("produttore %d: elemento %d con valore %d\n", id, i+1, valore);
+		pthread_mutex_unlock(&lock);
+		
 	}
 
 	printf("produttore %d terminato\n", id);
@@ -56,9 +56,9 @@ void *consumatore(void *arg){
 
 		//attendi se il buffer è vuoto e la produzione non è temrminata
 		while(elementiAttuali==0 && letti<totali){
-			pthread_mutex_lock(&lock);
-			sched_yield();
 			pthread_mutex_unlock(&lock);
+			sched_yield();
+			pthread_mutex_lock(&lock);
 		}
 
 		if(elementiAttuali==0 && letti>=totali){
@@ -102,10 +102,11 @@ int main(int argc, char const *argv[]){
 	int *idConsumatori = malloc(consumatori * sizeof(int));
 	
 	for(int i=0; i<produttori; i++){
-		idProduttori[i] = i;
+		idProduttori[i] = i+1;
 		pthread_create(&p[i], NULL, produttore, &idProduttori[i]);
 	}
 	for(int i=0; i<consumatori; i++){
+		idConsumatori[i] = i+1;
 		pthread_create(&c[i], NULL, consumatore, &idConsumatori[i]);
 	}
 
