@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <time.h>
+
 # define SIZEMAX 10
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
@@ -22,7 +24,7 @@ void *produttore(void *arg){
 	int id = *(int*)arg; 
 
 	for(int i=0; i<daInserire; i++){
-		usleep(random()%1000000);
+		usleep(random()%99999);
 		int valore = rand() % 100;
 
 		pthread_mutex_lock(&lock);
@@ -37,7 +39,7 @@ void *produttore(void *arg){
 		elementiAttuali++;
 
 		pthread_mutex_unlock(&lock);
-		printf("produttore %d: elemento %d-> valore %d\n", id, i+1, valore);
+		printf("produttore %d: elemento %d con valore %d\n", id, i+1, valore);
 	}
 
 	printf("produttore %d terminato\n", id);
@@ -48,7 +50,7 @@ void *consumatore(void *arg){
 	int id = *(int*)arg;
 
 	while(1){
-		usleep(random()%1000000);
+		usleep(random()%99999);
 
 		pthread_mutex_lock(&lock);
 
@@ -64,7 +66,7 @@ void *consumatore(void *arg){
 			break;
 		}
 
-		printf("produttore %d: valore %d\n", id, buffer[testa]);
+		printf("consumatore %d: toglie valore %d\n", id, buffer[testa]);
 		testa = (testa+1)%SIZEMAX;
 		elementiAttuali--;
 		letti++;
@@ -78,6 +80,7 @@ void *consumatore(void *arg){
 int main(int argc, char const *argv[]){
 
  	srand(time(NULL));
+	
 
 	int produttori = atoi(argv[1]);
 	int consumatori = atoi(argv[2]);
@@ -92,7 +95,7 @@ int main(int argc, char const *argv[]){
 
 
 	pthread_t *p = malloc(sizeof(pthread_t)*produttori);
-	pthread_t *c = mtoalloc(sizeof(pthread_t)*consumatori);
+	pthread_t *c = malloc(sizeof(pthread_t)*consumatori);
 
 	//creazione produttori && consumatori
 	int *idProduttori = malloc(produttori * sizeof(int));
@@ -114,8 +117,10 @@ int main(int argc, char const *argv[]){
 		pthread_join(c[i], NULL);
 	}
 
+	printf("elementi prodotti totali: %d--------> letti totali: %d", produttori*daInserire, letti);
+
 	free(buffer);
-    free(produttori);
-    free(consumatori);
+    free(p);
+    free(c);
     pthread_mutex_destroy(&lock);
 }
