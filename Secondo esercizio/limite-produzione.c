@@ -5,33 +5,73 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <unistd.h>
+# define SIZEMAX 10
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
-int elementi;
-int *array;
-int indice;
+int *buffer;
+int coda;
+int testa;
+int elementiAttuali;
+int daInserire;
+int letti;
+int totali;
 
 void *produttore(void *arg){
-	for(int i=0; i<elementi; i++){
-		unsleep(random()%1000000);
+	int id = *(int*)arg; 
 
+	for(int i=0; i<daInserire; i++){
+		usleep(random()%1000000);
 		int valore = rand() % 100;
 
 		pthread_mutex_lock(&lock);
-		array[indice] = valore;
-		indice++;
+		while(elementiAttuali == SIZEMAX){
+			pthread_mutex_unlock(&lock);
+			sched_yield();
+			pthread_mutex_lock(&lock);
+		}
+
+		buffer[coda] = valore;
+		coda = (coda+1) % SIZEMAX;
+		elementiAttuali++;
+
 		pthread_mutex_unlock(&lock);
+		printf("produttore %d: elemento %d-> valore %d\n", id, i+1, valore);
 	}
+
+	printf("produttore %d terminato\n", id);
+	return NULL;
 }
 
 void *consumatore(void *arg){
-	usleep(random()%1000000);
-	while(indice!=0){
+	int id = *(int*)arg;
+
+	while(1){
+		usleep(random()%1000000);
+
 		pthread_mutex_lock(&lock);
-		indice--;
+
+		//attendi se il buffer è vuoto e la produzione non è temrminata
+		while(elementiAttuali==0 && letti<totali){
+			pthread_mutex_lock(&lock);
+			sched_yield();
+			pthread_mutex_unlock(&lock);
+		}
+
+		if(elementiAttuali==0 && letti>=totali){
+			pthread_mutex_unlock(&lock);
+			break;
+		}
+
+		printf("produttore %d: valore %d\n", id, buffer[testa]);
+		testa = (testa+1)%SIZEMAX;
+		elementiAttuali--;
+		letti++;
 		pthread_mutex_unlock(&lock);
 	}
+
+	return NULL;
 }
 
 
@@ -41,19 +81,29 @@ int main(int argc, char const *argv[]){
 
 	int produttori = atoi(argv[1]);
 	int consumatori = atoi(argv[2]);
-	elementi = atoi(argv[3]);
+	daInserire = atoi(argv[3]);
 
-	array = malloc(sizeof(int)*produttori*elementi);
-	indice = 0;
+	elementiAttuali = 0;
+	testa = 0;
+	coda = 0;
+	buffer = malloc(sizeof(int)*SIZEMAX);
+	letti = 0;
+	totali = daInserire*produttori;
+
+
 	pthread_t *p = malloc(sizeof(pthread_t)*produttori);
-	pthread_t *c = malloc(sizeof(pthread_t)*consumatori);
+	pthread_t *c = mtoalloc(sizeof(pthread_t)*consumatori);
 
-	//creazione produttori
+	//creazione produttori && consumatori
+	int *idProduttori = malloc(produttori * sizeof(int));
+	int *idConsumatori = malloc(consumatori * sizeof(int));
+	
 	for(int i=0; i<produttori; i++){
-		pthread_create(&p[i], NULL, produttore, NULL);
+		idProduttori[i] = i;
+		pthread_create(&p[i], NULL, produttore, &idProduttori[i]);
 	}
 	for(int i=0; i<consumatori; i++){
-		pthread_create(&c[i], NULL, consumatore, NULL);
+		pthread_create(&c[i], NULL, consumatore, &idConsumatori[i]);
 	}
 
 	//attesa
