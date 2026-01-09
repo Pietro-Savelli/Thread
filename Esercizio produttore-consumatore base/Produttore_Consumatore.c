@@ -105,4 +105,5 @@ int main(int argc, char const *argv[]){
 
 	pthread_join(prod, NULL);
 	pthread_join(cons, NULL);
+	free(p.array);
 }
