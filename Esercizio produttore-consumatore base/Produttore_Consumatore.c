@@ -22,7 +22,8 @@ void stampa(){
 }
 
 void push(){
-	int daInserire = (random()%p.inseriti)+1;
+	int daInserire = (random()%(GRANDEZZAPILA-p.inseriti))+1;
+	printf("%d\n", daInserire);
 
 	for(int i=0; i<daInserire; i++, p.inseriti++){
 		p.array[p.inseriti] = random()%100;
@@ -33,9 +34,10 @@ void push(){
 
 void pop(){
 	int daLeggere = (random()%p.inseriti)+1;
+	printf("%d\n", daLeggere);
 
 	for(int i=0; i<daLeggere; i++, p.inseriti--){
-		printf("%d-", p.array[p.inseriti]);
+		printf("%d-", p.array[p.inseriti-1]);
 	}
 	printf("\n");
 }
@@ -45,9 +47,11 @@ void *produttore(void *nome){
 	while(1){
 		// calcol.o e attesa
 		size_t tempo = random()%1000000;
-		usleep(tempo);
+		usleep(tempo);	
+		
 
 		pthread_mutex_lock(&lock);
+		printf("risveglio e inizio P\n");
 		while(p.inseriti==GRANDEZZAPILA){
 			pthread_mutex_unlock(&lock);
 			sched_yield();
@@ -68,8 +72,9 @@ void *consumatore(void *nome){
 		// calcol.o e attesa
 		size_t tempo = random()%1000000;
 		usleep(tempo);
-
+		
 		pthread_mutex_lock(&lock);
+		printf("risveglio e inizio C\n");
 		while(p.inseriti==0){
 			pthread_mutex_unlock(&lock);
 			sched_yield();
@@ -92,6 +97,7 @@ int main(int argc, char const *argv[]){
 	p.inseriti = 0;
 	p.array = malloc(sizeof(int)*GRANDEZZAPILA);
 
+	printf("inizio main\n");
 	pthread_t prod, cons;
 
 	pthread_create(&prod, NULL, produttore, "P");
