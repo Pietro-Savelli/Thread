@@ -1,0 +1,3 @@
+Consegna: Implementa un sistema dove N produttori devono inserire elementi nel buffer, ma ogni elemento deve avere un ID sequenziale globale.
+Ad esempio: il primo elemento inserito (da qualunque produttore) ha ID=1, il secondo ID=2, ecc.
+Sfida mutex: Devi generare l'ID dentro la sezione critica, ma la "produzione" (sleep casuale) deve avvenire FUORI per non bloccare gli altri troppo a lungo.
