@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <time.h>
+#include <unistd.h>
 
 
 #define SIZEMAX 10
@@ -30,7 +31,7 @@ void *produttore(void* numero){
 		pthread_mutex_lock(&lock);
 		idElemento = id;
 		id++;
-		printf("Produttore %d: generato ID=%d",*(int*)numero, idElemento);
+		printf("Produttore %d: generato ID=%d\n",*(int*)numero, idElemento);
 		pthread_mutex_unlock(&lock);
 
 		usleep(random()%1000000);
