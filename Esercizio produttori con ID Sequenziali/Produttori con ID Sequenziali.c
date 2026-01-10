@@ -15,6 +15,8 @@ typedef struct buffer{
 buffer b;
 int id;
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t pila_pulita =  PTHREAD_COND_INITIALIZER;
+pthread_cond_t pila_piena =  PTHREAD_COND_INITIALIZER;
 
 
 //PRIMO MODO
@@ -38,11 +40,14 @@ void *produttore(void* numero){
 
 		pthread_mutex_lock(&lock);
 		while(b.count==SIZEMAX){
-			pthread_mutex_unlock(&lock);
-			sched_yield();
-			pthread_mutex_lock(&lock);
+			pthread_cond_wait(&pila_pulita, &lock);
 		}
 		printf("Produttore %d: inserito ID=%d con valore %d\n",*(int*)numero, idElemento, myPush());
+
+		// se la pila è diventata piena sveglio un consumatore
+		if(b.count == SIZEMAX) {
+    		pthread_cond_signal(&pila_piena); 
+		}
 		pthread_mutex_unlock(&lock);
 	}
 	return NULL;
@@ -52,11 +57,17 @@ void *produttore(void* numero){
 void *consumatore(void* numero){
 	while(1){
 		usleep(random()%1000000);
+
 		pthread_mutex_lock(&lock);
-		if(b.count==SIZEMAX){
-			printf("CANCELLO TUTTA LA PILA PER NUOVI INSERIMENTI\n");
-			b.count = 0;
+		while(b.count < SIZEMAX) {
+		    pthread_cond_wait(&pila_piena, &lock);
 		}
+		
+		printf("CANCELLO TUTTA LA PILA PER NUOVI INSERIMENTI\n");
+		b.count = 0;
+		//pthread_cond_signal(&svuotata); da usare se ho un singolo produttore(sveglia solo un thread)
+		pthread_cond_broadcast(&pila_pulita);
+
 		pthread_mutex_unlock(&lock);
 
 	}
