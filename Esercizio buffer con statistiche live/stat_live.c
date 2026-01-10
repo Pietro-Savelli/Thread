@@ -23,15 +23,16 @@ void *consumatore(void* arg);
 void *produttore(void* arg);
 void *statistiche(void* arg);
 void push();
+void pop();
 
-void* consumatore(void* arg){
+void *produttore(void* arg){
 	while(1){
 		usleep(random()%1000000);
 
 		pthread_mutex_lock(&lock);
-		while(count==DIMENSIONE_BUFFER){
+		while(b.count==DIMENSIONE_BUFFER){
 			pthread_mutex_unlock(&lock);
-			sched_yeald();
+			sched_yield();
 			pthread_mutex_lock(&lock);
 		}
 
@@ -40,14 +41,14 @@ void* consumatore(void* arg){
 	}
 }
 
-void* consumatore(void* arg){
+void *consumatore(void* arg){
 	while(1){
 		usleep(random()%1000000);
 
 		pthread_mutex_lock(&lock);
-		while(count==0){
+		while(b.count==0){
 			pthread_mutex_unlock(&lock);
-			sched_yeald();
+			sched_yield();
 			pthread_mutex_lock(&lock);
 		}
 
@@ -61,7 +62,7 @@ void* statistiche(void* arg){
 		int somma=0;
 		int media=0;
 
-		sleep(2);
+		sleep(1);
 
 		pthread_mutex_lock(&lock);
 		Buffer copia = b;
@@ -70,31 +71,38 @@ void* statistiche(void* arg){
 
 		printf("elementi Buffer\n");
 		for(int i=0; i<copia.count; i++){
-			printf("%d-", copia.buffer[copia.testa]);
-			somma += copia.buffer[copia.testa];
-			copia.testa = (copia.testa+1)%DIMENSIONE_BUFFER;
+			printf("%d-", copia.buffer[copia.coda]);
+			somma += copia.buffer[copia.coda];
+			copia.coda = (copia.coda+1)%DIMENSIONE_BUFFER;
 		}
-		if (copia.count > 0)
-    		media = somma / copia.count;
-
-		printf("Media: %d\n", media);
+		if (copia.count > 0){
+			media = somma / copia.count;
+		}
+		printf("\nMedia: %d\n", media);
 		printf("Prodotti: %d\n", copia.prodotto);
-		printf("Consuato: %d\n", copia.consumato);
+		printf("Consumati: %d\n", copia.consumato);
 		printf("------------------------------\n");
 	}
 }
 
 
 void push(){
-	int daInserire = random()%100;
-	b.buffer[testa] = daInserire;
-	testa = (testa+1)%DIMENSIONE_BUFFER;
-	b.prodotto++;
+	int quanti = (random()%(DIMENSIONE_BUFFER-b.count))+1;
+	for(int i=0; i<quanti; i++){
+		int daInserire = random()%100;
+		b.buffer[b.testa] = daInserire;
+		b.testa = (b.testa+1)%DIMENSIONE_BUFFER;
+		b.prodotto++;
+		b.count++;
+	}
+
 }
 
 void pop(){
-	coda = (coda-1)%DIMENSIONE_BUFFER;
-	b.consumato++;
+	int quanti = (random()%b.count)+1;
+	b.coda = (b.coda+quanti)%DIMENSIONE_BUFFER;
+	b.count -= quanti;
+	b.consumato+=quanti;
 }
 
 int main(int argc, char const *argv[]){
@@ -102,7 +110,6 @@ int main(int argc, char const *argv[]){
 	//imposta il seed per random
 	srand(time(NULL));
 
-	b.buffer = malloc(sizeof(int)*DIMENSIONE_BUFFER);
 	b.testa = 0;
 	b.coda = 0;
 	b.count = 0;
@@ -119,7 +126,6 @@ int main(int argc, char const *argv[]){
 	pthread_join(prod, NULL);
 	pthread_join(cons, NULL);
 	pthread_join(stat, NULL);
-	free(b.buffer);
 }
 
 
