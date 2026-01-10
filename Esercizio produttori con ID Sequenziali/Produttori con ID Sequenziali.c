@@ -14,6 +14,9 @@ typedef struct buffer{
 
 buffer b;
 int id;
+int produttori;
+int inseriti;
+int produttori_terminati;
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t pila_pulita =  PTHREAD_COND_INITIALIZER;
 pthread_cond_t pila_piena =  PTHREAD_COND_INITIALIZER;
@@ -24,6 +27,7 @@ int myPush(){
 	int daInserire = random()%100;
 	b.array[b.count] = daInserire;
 	b.count++;
+	inseriti++;
 	return daInserire;
 }
 
@@ -46,10 +50,17 @@ void *produttore(void* numero){
 
 		// se la pila è diventata piena sveglio un consumatore
 		if(b.count == SIZEMAX) {
-    		pthread_cond_signal(&pila_piena); 
+    		pthread_cond_broadcast(&pila_piena); 
 		}
 		pthread_mutex_unlock(&lock);
 	}
+
+	pthread_mutex_lock(&lock);
+    produttori_terminati++;
+    // Sveglio i consumatori in caso tutti i produttori abbiano finito
+    pthread_cond_broadcast(&pila_piena);
+	printf("FINITO PRODUTTORE %d\n", *(int*)numero);
+    pthread_mutex_unlock(&lock);
 	return NULL;
 }
 
@@ -59,19 +70,27 @@ void *consumatore(void* numero){
 		usleep(random()%1000000);
 
 		pthread_mutex_lock(&lock);
-		while(b.count < SIZEMAX) {
-		    pthread_cond_wait(&pila_piena, &lock);
+
+		while(b.count < SIZEMAX && produttori_terminati < produttori) {
+            pthread_cond_wait(&pila_piena, &lock);
+        }
+
+		//controllo se ho finito gli id da caricare
+		if(produttori_terminati == produttori){
+			pthread_cond_broadcast(&pila_piena); 
+			pthread_mutex_unlock(&lock);
+			break;
 		}
 		
 		printf("CANCELLO TUTTA LA PILA PER NUOVI INSERIMENTI\n");
 		b.count = 0;
-		//pthread_cond_signal(&svuotata); da usare se ho un singolo produttore(sveglia solo un thread)
+		//pthread_cond_signal(&pila_pulita); da usare se ho un singolo produttore(sveglia solo un thread)
 		pthread_cond_broadcast(&pila_pulita);
 
 		pthread_mutex_unlock(&lock);
 
 	}
-	
+	printf("FINITO CONSUMATORE %d\n", *(int*)numero);
 	return NULL;
 }
 
@@ -82,11 +101,13 @@ int main(int argc, char const *argv[]){
 		exit(1);
 	}
 
-	int produttori = atoi(argv[1]);
+	produttori = atoi(argv[1]);
 	int consumatori = atoi(argv[2]);
 	b.array = malloc(sizeof(int)*SIZEMAX);
 	b.count = 0;
-	id = 0;
+	id = 1;
+	inseriti = 0;
+	produttori_terminati = 0;
 	srandom(time(NULL));
 
 	//allocazione memoria
