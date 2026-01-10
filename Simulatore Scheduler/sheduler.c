@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <time.h>
 #include "queue.h"
 #define QUEUE_SIZE 1000
 #define SLEEP_TIME (long) 1e5
@@ -89,6 +90,7 @@ void* consumatore(void* arg) {
 }
 
 int main(int argc, char** argv) {
+    srandom(time(NULL));
 
     durata = atoi(argv[1]);
     int ncpu = atoi(argv[2]);
