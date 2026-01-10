@@ -1,0 +1,7 @@
+Consegna: Implementa produttore-consumatore standard, ma aggiungi un thread "statistiche" che ogni 2 secondi stampa:
+
+Elementi nel buffer
+Media dei valori nel buffer
+Numero totale prodotto/consumato
+
+Sfida mutex: Il thread statistiche deve "fotografare" lo stato del buffer senza bloccare produttori/consumatori troppo a lungo. Devi copiare i dati necessari velocemente e poi elaborarli fuori dal lock.

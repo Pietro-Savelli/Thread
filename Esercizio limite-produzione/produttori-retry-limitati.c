@@ -146,5 +146,7 @@ int main(int argc, char const *argv[]){
 	free(buffer);
     free(p);
     free(c);
+    free(idProduttori);
+    free(idConsumatori);
     pthread_mutex_destroy(&lock);
 }
