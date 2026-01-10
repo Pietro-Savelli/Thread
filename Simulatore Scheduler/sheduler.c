@@ -36,7 +36,7 @@ void* produttore(void* arg) {
         }
 
         Process *p = malloc(sizeof(Process));
-        p->id = creati;
+        p->id = creati+1;
         creati++;
         p->exec_time = random() % (int)1e6; // tempo di esecuzione definito durante la creazione
         gettimeofday(&(p->arrival), NULL); // l'orario attuale del sistema e riempe la struttura dati timeval arrival(arrivo del job in nella coda)
