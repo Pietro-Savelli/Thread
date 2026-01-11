@@ -16,6 +16,9 @@ La repository è organizzata in cartelle tematiche, ciascuna contenente un eserc
 - **Esercizio buffer con statistiche live**  
   Implementazione di un buffer condiviso con monitoraggio in tempo reale delle statistiche di produzione e consumo.
 
+- **Esercizio buffer multipli condivisi**  
+  Gestione del trasferimento di elementi tra due buffer distinti, con focus sulla prevenzione del deadlock tramite acquisizione ordinata dei lock.
+
 - **Esercizio limite-produzione**  
   Gestione di vincoli sulla produzione con controllo dei limiti di capacità e sincronizzazione tra produttori.
 
