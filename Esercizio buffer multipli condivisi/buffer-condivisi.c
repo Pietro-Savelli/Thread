@@ -57,7 +57,7 @@ void *produttore(void *id){
 
 	pthread_mutex_lock(&lock1);
 	produttoriFiniti++;
-	printf("PRODUTTORE %d FINITO", *(int*)id);
+	printf("PRODUTTORE %d FINITO\n", *(int*)id);
 	pthread_mutex_unlock(&lock1);
 
 	return NULL;
@@ -90,6 +90,7 @@ void *consumatore(void *id){
 				b2.coda = (b2.coda+1)%SIZEMAX;
 				b2.count--;
 			}
+			printf("\n");
 		}
 
 		pthread_mutex_unlock(&lock2);
