@@ -18,6 +18,7 @@ Buffer b2;
 int consumatori;
 int produttori;
 int produttoriFiniti;
+int tuttoFinito;
 
 pthread_mutex_t lock1 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t lock2 = PTHREAD_MUTEX_INITIALIZER;
@@ -68,17 +69,17 @@ void *consumatore(void *id){
 	while(1){
 		usleep(random()%1000000);
 
+		pthread_mutex_lock(&lock1);
 		pthread_mutex_lock(&lock2);
+		if(produttoriFiniti==produttori && b1.count==0){
+			tuttoFinito = 1;
+		}
+		pthread_mutex_unlock(&lock2);
+		pthread_mutex_unlock(&lock1);
 
 		//se b2 vuoto e produzione finita
-		if(b2.count==0){
-			pthread_mutex_lock(&lock1);
-			if(produttoriFiniti==produttori && b1.count==0){
-				pthread_mutex_unlock(&lock1);
-				pthread_mutex_unlock(&lock2);
-				break;
-			}
-			pthread_mutex_unlock(&lock1);
+		if(b2.count==0 && tuttoFinito){
+			break;
 		}
 
 		if(b2.count!=0){
@@ -165,6 +166,7 @@ int main(int argc, char const *argv[]){
 	produttori = atoi(argv[1]);
 	consumatori = atoi(argv[2]);
 	produttoriFiniti = 0;
+	tuttoFinito = 0;
 	inizializzaBuffer(&b1);
 	inizializzaBuffer(&b2);
 
