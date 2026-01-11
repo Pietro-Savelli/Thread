@@ -1,0 +1,51 @@
+L’obiettivo del presente esercizio è simulare il comportamento di uno scheduler di sistema operativo che gestisce l’esecuzione di processi (job) secondo la politica Round Robin, nel caso semplificato in cui:
+•	l’esecuzione di un processo può essere interrotta (preemption),
+•	non è necessario accedere a risorse oltre alla CPU.
+________________________________________
+Scenario
+Si consideri un computer che presenta le seguenti caratteristiche:
+•	Il tasso di arrivo dei processi è pari a 10 processi al secondo.
+•	Il tempo di esecuzione totale di ogni processo è un valore casuale inferiore a 1 secondo.
+•	Lo scheduler gestisce una coda di processi FIFO con capacità massima pari a 1000 processi.
+•	Lo scheduler implementa la politica Round Robin con quantum di tempo fisso.
+•	Il computer può disporre di 1, 2 o 4 CPU, che eseguono i processi in parallelo.
+________________________________________
+Round Robin
+Lo scheduler utilizza un quantum di tempo Q (ad esempio 10 ms) per l’esecuzione dei processi:
+•	Se un processo termina entro il quantum:
+o	viene rimosso definitivamente dal sistema.
+•	Se un processo non termina entro il quantum:
+o	viene interrotto,
+o	il suo tempo di esecuzione residuo viene aggiornato,
+o	il processo viene reinserito in fondo alla coda.
+________________________________________
+Obiettivi della simulazione
+Scrivere un simulatore che:
+1.	Implementi lo scheduler Round Robin utilizzando il paradigma produttore–consumatore.
+2.	Utilizzi la struttura dati Queue e la struttura Process definite nel file queue.h fornito.
+3.	Simuli:
+o	l’arrivo dei processi,
+o	l’esecuzione sulle CPU,
+o	la preemption dei processi non completati.
+4.	Calcoli il turnaround time medio dei processi al termine della simulazione.
+________________________________________
+Parametri della simulazione
+La simulazione deve essere eseguita variando i seguenti parametri:
+•	Durata della simulazione, espressa come numero di processi generati:
+o	10, 20, 30 processi.
+•	Numero di CPU disponibili:
+o	1, 2, 4 CPU.
+•	Quantum di tempo Q:
+o	valore fisso (es. 10 ms).
+________________________________________
+Indicazioni sull’implementazione
+•	Il thread produttore genera nuovi processi rispettando il tasso di arrivo indicato.
+•	Ogni thread consumatore rappresenta una CPU che:
+1.	preleva un processo dalla coda,
+2.	lo esegue per un tempo pari al minimo tra:
+	il quantum,
+	il tempo di esecuzione residuo del processo,
+3.	se il processo non è terminato, lo reinserisce in coda.
+•	L’accesso alla coda e alle variabili condivise deve essere protetto da mutex.
+•	La simulazione termina quando tutti i processi generati sono stati completati.
+
