@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <pthread.h>
+#include <unistd.h>
 #include "queue.h"
 
 #define QUANTUM 200000
@@ -33,13 +34,13 @@ void *produttore(void* nome){
 		p->id = totaliProdotti;
 		p->exec_time = random()%1000000;
 		gettimeofday(&(p->arrival), NULL);
-		p->start = NULL; //mi serve per vedere se e' la prima esecuzione
-		p->end = NULL;
+		p->start.tv_sec = 0; //mi serve per vedere se e' la prima esecuzione
+		p->end.tv_sec = 0;
 		totaliProdotti++;
 
 		enqueue(q, p);
 		count++;
-		printf("[PRODUTTORE] Ho creato il job %ld con execTime %ld\n", p->id, p->exec_time);
+		printf("[PRODUTTORE] Ho creato il job %ld con execTime %ld ns\n", p->id, p->exec_time);
 		//rilascia
 		pthread_mutex_unlock(&lock);
 		usleep(SLEEP);
@@ -52,9 +53,12 @@ void *produttore(void* nome){
 
 void *consumatore(void* id){
 	while(1){
-		usleep(random()%1000000);
+		usleep(random()%100000);
 		int tempoEsecuzione = 0;
 		int finito = 0;
+		float RT = 0;
+		float TT = 0;
+		int is_first_run = 0;
 
 		pthread_mutex_lock(&lock);
 		//casi limite
@@ -67,18 +71,23 @@ void *consumatore(void* id){
 			pthread_mutex_unlock(&lock);
 			sched_yield();
 			pthread_mutex_lock(&lock);
+			
+			// ricontrollo la condizione di terminazione dopo il risveglio
+            if(count==0 && totaliProdotti==processiEsecuzione){
+                pthread_mutex_unlock(&lock);
+                return NULL;
+            }
 		}
 
 		// presa del processo 
-		Process *p = malloc(sizeof(Process));
-		p = dequeue(q);
+		Process *p = dequeue(q);
+		count--;
 		if(p->exec_time>QUANTUM){
 			tempoEsecuzione = QUANTUM;
-			P->exec_time = ((p->exec_time)-QUANTUM);
+			p->exec_time = ((p->exec_time)-QUANTUM);
 		}
 		else{
 			tempoEsecuzione = p->exec_time;
-			count--
 			finito = 1;
 			totaliFiniti++;
 		}
@@ -86,24 +95,27 @@ void *consumatore(void* id){
 		// rilascio + esecuzione
 		usleep(tempoEsecuzione);
 
-		if(p->start==NULL){// controllo se e' la prima volta che viene selezionato
-			p->start = gettimeofday(&(p->start), NULL);
-			float RT = (p->start.tv_sec - p->arrival.tv_sec)*1000000 + p->start.tv_usec - p->arrival.tv_usec;
-			printf("response time di processo id: %ld e' %ld\n", p->id, RT);
-			TRtot += RT;
+		if(p->start.tv_sec==0){// controllo se e' la prima volta che viene selezionato
+			gettimeofday(&(p->start), NULL);
+			RT = (p->start.tv_sec - p->arrival.tv_sec)*1000000 + p->start.tv_usec - p->arrival.tv_usec;
+			printf("Response time di processo id: %ld e' %f\n", p->id, RT/1000000);
+			is_first_run = 1;
 		}
 
 		if(finito){
-			p->end = gettimeofday(&(p->end), NULL);
-			float TT = (p->end.tv_sec - p->arrival.tv_sec)*1000000 + p->end.tv_usec - p->arrival.tv_usec;
-			printf("T time di processo id: %ld e' %ld\n", p->id, TT);
-			TTtot += TT;
+			gettimeofday(&(p->end), NULL);
+			TT = (p->end.tv_sec - p->arrival.tv_sec)*1000000 + p->end.tv_usec - p->arrival.tv_usec;
+			printf("Turnaround time di processo id: %ld e' %f\n", p->id, TT/1000000);
 		}
 
 		pthread_mutex_lock(&lock);
+		if(is_first_run) TRtot += RT;
+        if(finito)       TTtot += TT;
 		if(!finito){
 			enqueue(q, p);
+			count++;
 		}
+		pthread_mutex_unlock(&lock);
 	}
 
 	return NULL;
