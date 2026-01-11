@@ -1,0 +1,7 @@
+Esercizio 15: Deadlock Prevention Challenge
+Consegna: Hai DUE buffer condivisi tra produttori e consumatori. Alcuni thread devono operare su entrambi i buffer. Implementa una strategia per evitare deadlock.
+Regola: Se devi prendere entrambi i lock, prendili sempre nello stesso ordine.
+Sfida: Implementa thread che:
+
+Spostano elementi dal buffer1 al buffer2
+Devono prendere entrambi i lock ma in ordine consistente
